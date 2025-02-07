@@ -35,11 +35,4 @@ This project focuses on generating high-quality images using **Diffusion Models*
   - PyTorch or TensorFlow (with GPU support)
 - **NVIDIA GPU Dependencies**:
   - CUDA
-  - cuDNN
 
-### Additional Libraries
-Ensure the following libraries are installed:
-```plaintext
-numpy
-pillow
-torchvision
