@@ -28,6 +28,6 @@ async function generate(){
 }
 
 GenBtn.addEventListener("click", () => {
-    alert("Please wait...");
     generate();
+    alert("Please wait...");
 });
