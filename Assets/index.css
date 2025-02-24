@@ -3,7 +3,14 @@ body{
     paadding: 0;
     box-sizing: border-box;
     font-family: sans-serif;
+    background: black;
+    color: whitesmoke;
 
+}
+#input{
+    font-family: sans-serif;
+    text-align: center;
+    font-size: 20px;
 }
 .ctr{
     text-align: center;

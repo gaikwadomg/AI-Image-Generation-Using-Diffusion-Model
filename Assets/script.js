@@ -22,6 +22,7 @@ async function query(data) {
 async function generate(){
     query().then((response) => {
         // Use image
+		// const objUrl = "./ball.svg";
         const objUrl = URL.createObjectURL(response);
         image.src = objUrl;
     });
