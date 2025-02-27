@@ -12,6 +12,7 @@ This project focuses on generating high-quality images using **Diffusion Models*
 ---
 
 ## Workflow Image --> ![Alt Text](./comfi.png)
+![Alt](./space.jpg).
 
 
 ## Some Sample Images -->
