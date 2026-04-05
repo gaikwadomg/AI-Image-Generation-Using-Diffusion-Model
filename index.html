@@ -1,37 +1,714 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PixelMind — Text to Image AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <title>Ai Text to Image generation</title>
+  :root {
+    --ink: #0d0d12;
+    --surface: #13131e;
+    --card: #1a1a28;
+    --border: rgba(255,255,255,0.08);
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --muted: #7a7a9a;
+    --text: #e8e8f0;
+    --accent: #7b6cff;
+  }
+
+  html, body {
+    min-height: 100%;
+    background: var(--ink);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+  }
+
+  /* ── Stars background ─────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 10%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 50% 80%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 70% 50%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 70%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 20% 90%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 30%, rgba(255,255,255,0.4) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Layout ───────────────────────────────────────── */
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* ── Header ───────────────────────────────────────── */
+  .header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-top: 1rem;
+  }
+
+  .college-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 12px;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+  }
+
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+
+  .logo span {
+    color: var(--gold);
+  }
+
+  .tagline {
+    font-size: 0.95rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ── Team strip ───────────────────────────────────── */
+  .team {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 1.2rem;
+    flex-wrap: wrap;
+  }
+
+  .team-member {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(123,108,255,0.2);
+    border: 1px solid rgba(123,108,255,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 500;
+    color: #a89cff;
+  }
+
+  /* ── Input card ───────────────────────────────────── */
+  .input-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .input-label {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+    display: block;
+  }
+
+  .prompt-area {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 300;
+    line-height: 1.6;
+    resize: vertical;
+    min-height: 90px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .prompt-area::placeholder { color: rgba(122,122,154,0.5); }
+  .prompt-area:focus { border-color: rgba(201,168,76,0.4); }
+
+  /* ── Options row ──────────────────────────────────── */
+  .options-row {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .option-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .option-group select {
+    background-color: #1e1e30;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    color: #e8e8f0;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    padding: 0.6rem 0.9rem;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a7a9a' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px 7px;
+    padding-right: 2rem;
+  }
+
+  .option-group select:focus { border-color: rgba(201,168,76,0.4); }
+
+  .option-group select option {
+    background-color: #1e1e30;
+    color: #e8e8f0;
+  }
+
+  .option-group select option:hover,
+  .option-group select option:checked {
+    background-color: #2e2e48;
+    color: #c9a84c;
+  }
+
+  /* ── Generate button ──────────────────────────────── */
+  .generate-btn {
+    display: block;
+    width: 100%;
+    margin-top: 1.25rem;
+    padding: 1rem;
+    background: var(--gold);
+    color: #1a1400;
+    border: none;
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .generate-btn:hover { background: var(--gold-light); }
+  .generate-btn:active { transform: scale(0.99); }
+  .generate-btn:disabled { background: rgba(201,168,76,0.3); color: rgba(255,255,255,0.3); cursor: not-allowed; }
+
+  /* ── Result area ──────────────────────────────────── */
+  .result-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    display: none;
+    animation: fadeUp 0.4s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-card.visible { display: block; }
+
+  .result-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .result-title {
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--gold);
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .status-dot.done { animation: none; background: #4caf85; }
+
+  .image-wrapper {
+    position: relative;
+    min-height: 340px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.3);
+  }
+
+  .loader-ring {
+    width: 56px;
+    height: 56px;
+    border: 2px solid rgba(201,168,76,0.15);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .generated-img {
+    width: 100%;
+    display: block;
+    object-fit: cover;
+  }
+
+  .result-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .prompt-echo {
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-style: italic;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .action-btns {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .action-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    padding: 0.45rem 0.9rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .action-btn:hover { background: rgba(255,255,255,0.1); }
+
+  /* ── Prompt suggestions ───────────────────────────── */
+  .suggestions {
+    margin-top: 1.25rem;
+  }
+
+  .sugg-label {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.6rem;
+  }
+
+  .sugg-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .chip {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    white-space: nowrap;
+  }
+
+  .chip:hover { border-color: rgba(201,168,76,0.4); color: var(--gold); }
+
+  /* ── History ──────────────────────────────────────── */
+  .history-section { margin-top: 2.5rem; }
+
+  .history-title {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .history-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+  }
+
+  .hist-item {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .hist-item:hover { border-color: rgba(201,168,76,0.3); }
+
+  .hist-item img { width: 100%; display: block; aspect-ratio: 1; object-fit: cover; }
+
+  .hist-caption {
+    padding: 0.5rem 0.7rem;
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: var(--card);
+  }
+
+  /* ── Footer ───────────────────────────────────────── */
+  .footer {
+    margin-top: 4rem;
+    text-align: center;
+    font-size: 11px;
+    color: rgba(122,122,154,0.4);
+    letter-spacing: 0.05em;
+  }
+
+  .footer strong { color: rgba(201,168,76,0.5); font-weight: 400; }
+
+  /* ── Error state ──────────────────────────────────── */
+  .error-box {
+    padding: 1.5rem;
+    text-align: center;
+    color: #ff7070;
+    font-size: 0.9rem;
+    display: none;
+  }
+
+  @media (max-width: 480px) {
+    .options-row { flex-direction: column; }
+    .history-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
 </head>
-<link rel="stylesheet" href="./Assets/index.css">
 <body>
-    <h1 class="ctr">Sinhgad College of Science </h1>
-    <h2 class="ctr">Sem 6 Project - Ai Text to image generater <br>
-    </h2>
-       
-    <p class="ctr">
-        By - Om Gaikwad (3038) & Lokesh Bhagat (3013)
-        
-        <br>
-        Project Guide - Nita Khatri Madam
-        <hr>
-        <div class="ctr"> 
-            <br>
+<div class="wrapper">
 
-            <b class="ctr prmpt">Enter Text prompt for generating image </b>
-            <br>
-            <input type="input" name="Prompt" id="input" placeholder="Prompt Here"> <br>
-            <button id="btn">Generate</button>
-            
-        </div>
-        <div class=" imageContainer">
-            <img src="./Assets/spin.svg" id="image" alt="Wait For image to reload !">
-        </div>
-    </p>
-    
+  <!-- Header -->
+  <header class="header">
+    <div class="college-badge">🎓 Trinity Academy of Engineering, Pune</div>
+    <h1 class="logo">Pixel<span>Mind</span></h1>
+    <p class="tagline">Text-to-Image · AI/ML Project · 2024–25</p>
+    <div class="team">
+      <div class="team-member">
+        <div class="avatar">LB</div>
+        <span>Lokesh Bhagat</span>
+      </div>
+      <div class="team-member">
+        <div class="avatar">KD</div>
+        <span>Kunal Dhonte</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Input card -->
+  <div class="input-card">
+    <label class="input-label" for="prompt">Describe your image</label>
+    <textarea
+      id="prompt"
+      class="prompt-area"
+      placeholder="e.g. A futuristic city at sunset, glowing neon lights reflecting on rain-soaked streets, cinematic style…"
+    ></textarea>
+
+    <div class="options-row">
+      <div class="option-group">
+        <label class="input-label" for="style">Art Style</label>
+        <select id="style">
+          <option value="">Default</option>
+          <option value="photorealistic">Photorealistic</option>
+          <option value="digital art">Digital Art</option>
+          <option value="oil painting">Oil Painting</option>
+          <option value="watercolor">Watercolor</option>
+          <option value="anime">Anime</option>
+          <option value="3d render">3D Render</option>
+          <option value="sketch">Pencil Sketch</option>
+          <option value="pixel art">Pixel Art</option>
+          <option value="fantasy art">Fantasy Art</option>
+          <option value="cyberpunk">Cyberpunk</option>
+        </select>
+      </div>
+      <div class="option-group">
+        <label class="input-label" for="quality">Quality</label>
+        <select id="quality">
+          <option value="detailed">Detailed</option>
+          <option value="ultra detailed, 4k">Ultra HD</option>
+          <option value="masterpiece">Masterpiece</option>
+          <option value="">Standard</option>
+        </select>
+      </div>
+      <div class="option-group">
+        <label class="input-label" for="mood">Mood</label>
+        <select id="mood">
+          <option value="">Any</option>
+          <option value="cinematic">Cinematic</option>
+          <option value="dramatic lighting">Dramatic</option>
+          <option value="golden hour">Golden Hour</option>
+          <option value="dark and moody">Dark &amp; Moody</option>
+          <option value="dreamy soft light">Dreamy</option>
+          <option value="vibrant colorful">Vibrant</option>
+          <option value="minimalist">Minimalist</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="generate-btn" id="genBtn" onclick="generate()">
+      ✦ Generate Image
+    </button>
+
+    <!-- Prompt suggestions -->
+    <div class="suggestions">
+      <div class="sugg-label">Try these prompts</div>
+      <div class="sugg-chips">
+        <span class="chip" onclick="usePrompt(this)">A dragon flying over Mount Everest</span>
+        <span class="chip" onclick="usePrompt(this)">Robot sitting in a Japanese garden</span>
+        <span class="chip" onclick="usePrompt(this)">Girl reading under a glowing tree at night</span>
+        <span class="chip" onclick="usePrompt(this)">Underwater city with bioluminescent fish</span>
+        <span class="chip" onclick="usePrompt(this)">Astronaut on a purple alien planet</span>
+        <span class="chip" onclick="usePrompt(this)">Ancient Indian temple in foggy mountains</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result card -->
+  <div class="result-card" id="resultCard">
+    <div class="result-header">
+      <span class="result-title">Generated Image</span>
+      <div class="status-dot" id="statusDot"></div>
+    </div>
+    <div class="image-wrapper" id="imageWrapper">
+      <div class="loader-ring" id="loader"></div>
+      <div class="error-box" id="errorBox">
+        ⚠ Could not generate image. Please check your internet connection and try again.
+      </div>
+    </div>
+    <div class="result-footer" id="resultFooter" style="display:none">
+      <span class="prompt-echo" id="promptEcho"></span>
+      <div class="action-btns">
+        <a class="action-btn" id="downloadBtn" download="pixelmind.jpg">↓ Download</a>
+        <button class="action-btn" onclick="regenerate()">↺ Regenerate</button>
+        <button class="action-btn" onclick="copyPromptToClip()">⎘ Copy Prompt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="history-section" id="historySection" style="display:none">
+    <div class="history-title">Your Generation History</div>
+    <div class="history-grid" id="historyGrid"></div>
+  </div>
+
+</div>
+
+<!-- Footer -->
+<div class="footer" style="position:relative;z-index:1">
+  <strong>PixelMind MVP</strong> &nbsp;·&nbsp; Trinity Academy of Engineering, Pune &nbsp;·&nbsp;
+  Lokesh Bhagat &amp; Kunal Dhonte &nbsp;·&nbsp; Powered by Pollinations.ai (Free AI)
+</div>
+
+<script>
+  const history = [];
+  let lastPrompt = '';
+  let lastFullPrompt = '';
+
+  function buildFullPrompt() {
+    const prompt  = document.getElementById('prompt').value.trim();
+    const style   = document.getElementById('style').value;
+    const quality = document.getElementById('quality').value;
+    const mood    = document.getElementById('mood').value;
+    const extras  = [style, quality, mood].filter(Boolean).join(', ');
+    return extras ? `${prompt}, ${extras}` : prompt;
+  }
+
+  function generate() {
+    const prompt = document.getElementById('prompt').value.trim();
+    if (!prompt) {
+      document.getElementById('prompt').focus();
+      return;
+    }
+    lastPrompt = prompt;
+    lastFullPrompt = buildFullPrompt();
+    doGenerate(lastFullPrompt);
+  }
+
+  function regenerate() {
+    doGenerate(lastFullPrompt);
+  }
+
+  function doGenerate(fullPrompt) {
+    const btn = document.getElementById('genBtn');
+    const card = document.getElementById('resultCard');
+    const wrapper = document.getElementById('imageWrapper');
+    const loader = document.getElementById('loader');
+    const errorBox = document.getElementById('errorBox');
+    const footer = document.getElementById('resultFooter');
+    const statusDot = document.getElementById('statusDot');
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Generating…';
+
+    card.classList.add('visible');
+    loader.style.display = 'block';
+    errorBox.style.display = 'none';
+    footer.style.display = 'none';
+    statusDot.className = 'status-dot';
+
+    // Remove any existing image
+    const oldImg = wrapper.querySelector('img');
+    if (oldImg) oldImg.remove();
+
+    // Scroll to card
+    setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+
+    // Pollinations.ai – 100% free, no API key needed
+    const seed = Math.floor(Math.random() * 999999);
+    const encoded = encodeURIComponent(fullPrompt);
+    const url = `https://image.pollinations.ai/prompt/${encoded}?width=768&height=768&seed=${seed}&nologo=true&enhance=true`;
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = () => {
+      loader.style.display = 'none';
+      img.className = 'generated-img';
+      wrapper.appendChild(img);
+      statusDot.className = 'status-dot done';
+
+      document.getElementById('promptEcho').textContent = `"${fullPrompt}"`;
+      document.getElementById('downloadBtn').href = url;
+      footer.style.display = 'flex';
+
+      btn.disabled = false;
+      btn.textContent = '✦ Generate Image';
+
+      addToHistory(url, lastPrompt);
+    };
+
+    img.onerror = () => {
+      loader.style.display = 'none';
+      errorBox.style.display = 'block';
+      statusDot.className = 'status-dot';
+      statusDot.style.background = '#ff7070';
+      btn.disabled = false;
+      btn.textContent = '✦ Generate Image';
+    };
+
+    img.src = url;
+  }
+
+  function usePrompt(el) {
+    document.getElementById('prompt').value = el.textContent;
+    document.getElementById('prompt').focus();
+  }
+
+  function copyPromptToClip() {
+    navigator.clipboard.writeText(lastFullPrompt).then(() => {
+      const btn = event.target;
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+  }
+
+  function addToHistory(url, prompt) {
+    history.unshift({ url, prompt });
+    if (history.length > 12) history.pop();
+
+    const section = document.getElementById('historySection');
+    const grid = document.getElementById('historyGrid');
+    section.style.display = 'block';
+    grid.innerHTML = '';
+
+    history.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'hist-item';
+      div.title = item.prompt;
+      div.innerHTML = `
+        <img src="${item.url}" alt="${item.prompt}" loading="lazy" onerror="this.style.display='none'"/>
+        <div class="hist-caption">${item.prompt}</div>
+      `;
+      div.onclick = () => {
+        document.getElementById('prompt').value = item.prompt;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+      grid.appendChild(div);
+    });
+  }
+
+  // Keyboard shortcut: Ctrl+Enter to generate
+  document.getElementById('prompt').addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') generate();
+  });
+</script>
 </body>
-<script src="./Assets/script.js"></script>
 </html>
